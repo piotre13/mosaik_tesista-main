@@ -1,14 +1,18 @@
 #scenario creation imports
-from Scenario.Prj_creation_archetypes import  PrjScenario
+#from Scenario.Prj_creation_archetypes import  PrjScenario
 #simul imports
 import mosaik
 from mosaik.util import connect_randomly, connect_many_to_one
 from plot import plot_execution_graph, plot_execution_graph_st
-from plot_results import plot_primary
+#from plot_results import plot_primary
 import networkx as nx
 import matplotlib.pyplot as plt
 import sys
-from pyvis.network import Network
+from building_model.initialize import Initialize 
+import cea.config
+import cea.inputlocator
+import pickle
+#from pyvis.network import Network
 
 #***SCENARIO CREATION***
 
@@ -34,8 +38,14 @@ def create_scenario(path=None):
 
 #SIMULATION********
 sim_config = {
-    'DUMMY':{
-            'python':'Dummy_loads.dummy_API:DummyApi'
+    'Building':{
+            'python':'BuildingMosaik.Building_API:BuildingApi'
+        },
+    'PV':{
+            'python':'PVsim.mosaik_pv_sim:PVSIM'
+        },
+    'CSV':{
+            'python':'meteo.mk_csvsim:CSV'
         },
     'Grid': {
          'python':'Grid.grid_API:GridApi'
@@ -58,9 +68,10 @@ sim_config = {
 sys.path.insert(0, 'src/')
 
 # Add PV data file
-END = 1  * 60 * 60  #two days ---> 2 * 24 * 60 * 60
-START = '2014-01-01 01:00:00'
+END = 5  * 60 * 60  #two days ---> 2 * 24 * 60 * 60
+START = '2010-01-01 02:00:00'
 GRID_FILE = 'cigre_mv_all' # import directly from pandpaower simbench module
+METEO_PATH = 'meteo/meteo_mosaik_1h.csv' 
 #GRID_FILE = 'test_pp'
 #NB the grid must already have loads/gen/storages and transf created
 Threshold_DSO = 0.05
@@ -68,51 +79,80 @@ Threshold_DSO = 0.05
 
 
 def main():
+
+    #initialize the CEA scenario
+    #config = cea.config.Configuration()
+    #locator = cea.inputlocator.InputLocator(scenario = config.scenario)
+    #scenario_cea = Initialize(config, locator)
+    #print(scenario_cea.__dict__)
+
+    #step2 save the scenario as pickle object
+    #with open ('building_model/scenario_obj.pickle', 'wb') as f:
+    #    pickle.dump(scenario_cea, f, pickle.HIGHEST_PROTOCOL)
+
+    #exit()
+
     """Compose the mosaik scenario and run the simulation."""
     # Set up the "world" instance.
     world = mosaik.World(sim_config, debug= True)
 
 #SIMULATORS START init()
 
-    dsosim = world.start('DSO', step_size=15 * 60, TH=Threshold_DSO)
+    dsosim = world.start('DSO', step_size = 60 * 60, TH = Threshold_DSO)
 
-    mas = world.start('MAS', start_date=START)
+    #mas = world.start('MAS', start_date = START)
 
-    gridsim = world.start('Grid', step_size=15 * 60)  # mode = 'pf' or 'pf_timeseries'
+    gridsim = world.start('Grid', step_size = 60 * 60)  # mode = 'pf' or 'pf_timeseries'
 
+    pvsim = world.start ('PV', step_size = 60 * 60)
 
+    meteoSim = world.start('CSV', sim_start = START, datafile = METEO_PATH)
+    #print(meteoSim.meta)
+    #exit()
+    #print(meteoSim.meta)
+    #exit()
+    buildingsim = world.start('Building',step_size = 60 * 60) 
 #ENTITIES CREATION create()
-    #TODO USE RELATION IN ENTITIES FOR CONNECTIONS
-
+    
+    #creating mosaik entities
     grid = gridsim.Grid(gridfile=GRID_FILE)  # calls create() could be called for more than one grid
     grid_components = grid.children  # attribute children returns children of the grid entity
     dso = dsosim.Dso()
+    csv = meteoSim.meteo()
+    pvs = pvsim.PVsimulator.create(10)
+    
+    buildings = buildingsim.Building.create(10)
+
+
+    #creating aiomas environment and agents use this or the mosaik version
 
     #mas = massim.MAS.create(1)
-    aggrs = mas.Aggregator.create(3)
-    builds = mas.Building.create(10)
+    #aggrs = mas.Aggregator.create(3)
+    #builds = mas.Building.create(10)
 
 #CONNECTIONS
-    world.connect(grid, dso, 'P_rt', 'results')
-    world.connect(dso,grid,'proceed', weak = True )
-    i = 0
-    #todo should connect buildings to bus not to loads
-    grid_loads = [e for e in grid_components if e.type in 'Load']
-    grid_bus = [e for e in grid_components if e.type in 'Bus']
-    for building in builds:
-        #world.connect(building,grid_loads[i],'p_mw','q_mvar', 'min_p_mw','max_p_mw','min_q_mvar','max_q_mvar','controllable', 'cost')
-        world.connect(building,grid_bus[i],'load','storage','sgen')
+#todo must connect weather meteo to buildings
 
-        #world.connect(building,dso,'waiting_DR','results', async_requests=True, initial_data={'result':None})
-        #world.connect(building,dso,'waiting_DR','opf_results', async_requests=True, initial_data={'opf_results':None})
-        world.connect(dso,building, 'opf_results', time_shifted=True, initial_data={'opf_results':None})
+    
+   # world.connect(dso,grid,'proceed', weak = True )
+   
+
+   #NB if cretaing more buildings of PV than busess find another way to connect
+    
+    grid_bus = [e for e in grid_components if e.type in 'Bus']
+    i = 0
+    for building in buildings:
+        world.connect(csv,building,'T_ext')
+        world.connect(building,grid_bus[i],'load')
         i+=1
 
-    #world.connect(grid, dso, 'P_rt', 'results')
-    #world.connect(dso, grid, 'proceed', weak=True,initial_data={'proceed':False})
+    j=0    
+    for pv in pvs:
+        world.connect(csv,pv,'ghi', 'T_ext') 
+        world.connect(pv, grid_bus[j], 'sgen')
+        j+=1
 
-    #connect_many_to_one(world,aggrs,dso,'aggr_msg')
-
+    world.connect(grid, dso, 'P_rt')
 
     #aggrs.setup_done()
     #drawing the entity graph
@@ -160,6 +200,7 @@ def main():
     #plt.show()
     #plot_execution_graph_st(world)
     #start the simulation
+    print('good until here ')
     world.run(until=END)
 
     #p_rt = dso.sim._inst.P_rt
@@ -168,6 +209,7 @@ def main():
     #print('lenghts: P_rt:%s  P_sch:%s  P_res:%s '%(len(p_rt),len(p_sch),len(p_res)))
 
     plot_execution_graph_st(world)
+    plot_execution_graph(world)
     #plot_primary(p_rt, p_sch, p_res)
 
 if __name__ == '__main__':

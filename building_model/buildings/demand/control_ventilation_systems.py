@@ -2,8 +2,8 @@
 
 
 
-
-
+import sys
+sys.path.append('building_model/')
 import buildings.demand.control_heating_cooling_systems as control_heating_cooling_systems
 from buildings.demand.constants import TEMPERATURE_ZONE_CONTROL_NIGHT_FLUSHING, DELTA_T_NIGHT_FLUSHING 
 from cea.constants import HOURS_IN_DAY, NIGHT_START, NIGHT_STOP

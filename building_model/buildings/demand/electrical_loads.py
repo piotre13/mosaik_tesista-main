@@ -8,7 +8,8 @@ Electrical loads
 
 import numpy as np
 import pandas as pd
-
+import sys
+sys.path.append('building_model/')
 from cea.constants import *
 from cea.constants import HOURS_IN_YEAR, P_WATER_KGPERM3, SECONDS_PER_HOUR
 import buildings.demand.control_heating_cooling_systems as control_heating_cooling_systems

@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 import json
-
+import sys
+sys.path.append('building_model/')
 from cea.constants import HOURS_IN_YEAR, HOURS_PRE_CONDITIONING, SECONDS_PER_HOUR
 
 #import demand_writers

@@ -2,7 +2,8 @@
 
 
 
-
+import sys
+sys.path.append('building_model/')
 
 import numpy as np
 import buildings.demand.control_ventilation_systems as control_ventilation_systems

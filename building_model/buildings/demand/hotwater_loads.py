@@ -1,7 +1,8 @@
 """
 Hotwater load (it also calculates fresh water needs)
 """
-
+import sys
+sys.path.append('building_model/')
 from cea.constants import *
 import numpy as np
 import scipy

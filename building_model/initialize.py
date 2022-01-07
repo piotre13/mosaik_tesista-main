@@ -1,4 +1,5 @@
-
+import sys 
+sys.path.append('building_model/')
 import Utils
 import sys
 import random
@@ -9,7 +10,7 @@ import cea.inputlocator as inputlocator
 from cea.utilities import epwreader
 from building_properties import BuildingProperties
 import pandapower as pp
-from building_model import Mpc as MPC
+from model import Mpc as MPC
 
 
 

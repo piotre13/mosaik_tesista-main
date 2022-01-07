@@ -4,7 +4,8 @@ Demand model of thermal loads
 """
 
 
-
+import sys
+sys.path.append('building_model/')
 
 import numpy as np
 import pandas as pd

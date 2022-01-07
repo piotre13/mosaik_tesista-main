@@ -299,10 +299,18 @@ class pandapower(object):
             - indivdual : regarding a specific grid component"""
         #TODO COMPLETE THE MODELLING WITH ALL POSSIBLE COMPONENTS
         if etype == 'Bus':
-            self.set_loads(data['load'], idx)
-            self.set_storages(data['storage'],idx)
-            self.set_sgens(data['sgen'],idx)
-
+            try:
+                self.set_loads(data['load'], idx)
+            except:
+                print('no loads from this entity')
+            try:
+                self.set_storages(data['storage'],idx)
+            except:
+                print('no storage from this entity')
+            try:
+                self.set_sgens(data['sgen'],idx)
+            except:
+                print('no sgens from this entity')
         else: # single components
             #todo in case passing single elements mosaik entities
             pass
@@ -314,6 +322,7 @@ class pandapower(object):
             name = list(load.keys())[0]+'_load'
 
             if name not in self.net.load['name']: #check if already present if not create it
+
                 self.create_element(bus_idx, name ,'load', load[list(load.keys())[0]])
 
 

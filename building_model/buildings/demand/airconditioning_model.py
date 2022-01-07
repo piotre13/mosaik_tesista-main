@@ -3,8 +3,8 @@
 Air conditioning equipment component models
 
 """
-
-
+import sys
+sys.path.append('building_model/')
 
 
 import numpy as np

@@ -7,7 +7,8 @@ prEN 15316-2:2014
 
 """
 
-
+import sys
+sys.path.append('building_model/')
 
 
 

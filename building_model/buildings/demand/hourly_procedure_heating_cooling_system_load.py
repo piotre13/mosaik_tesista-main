@@ -2,7 +2,8 @@
 
 
 
-
+import sys
+sys.path.append('building_model/')
 
 import warnings
 import numpy as np

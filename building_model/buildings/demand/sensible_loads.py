@@ -4,7 +4,8 @@ Sensible space heating and space cooling loads
 EN-13970
 """
 
-
+import sys
+sys.path.append('building_model/')
 
 import numpy as np
 import pandas as pd

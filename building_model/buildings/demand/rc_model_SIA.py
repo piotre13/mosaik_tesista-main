@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-
+import sys
+sys.path.append('building_model/')
 
 
 import numpy as np
